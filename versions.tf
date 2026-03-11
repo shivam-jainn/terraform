@@ -1,0 +1,14 @@
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "7.23.0"
+    }
+  }
+}
+
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+}
