@@ -1,9 +1,12 @@
-resource "google_compute_subnetwork" "subnets" {
-  for_each = var.subnets
+module "vpc" {
+    source  = "terraform-google-modules/network/google//modules/subnets"
+    version = "~> 16.1"
 
-  name          = each.key
-  ip_cidr_range = each.value
-  region        = var.region
-  network       = google_compute_network.vpc_network.id
-  private_ip_google_access = true
+    project_id   = var.project_id
+    network_name = var.vpc_name
+
+    subnets = var.subnets 
+
+    #remove this if you need multiregion subnets
+    subnets_region=var.region 
 }

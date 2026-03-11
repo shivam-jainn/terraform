@@ -1,7 +1,8 @@
 module "networking" {
   source      = "../../modules/networking"
-  vpc_name    = "prod-vpc"
-  router_name = "prod-router"
-  region      = "us-central1"
+  project_id  = var.project_id
+  vpc_name    = var.vpc_name
+  router_name = var.router_name
+  region      = var.region
   subnets     = var.subnets
 }

@@ -1,3 +1,8 @@
+variable "project_id" {
+  description = "GCP project ID for networking resources"
+  type        = string
+}
+
 variable "vpc_name" {
   description = "Name of the VPC"
   type        = string
@@ -14,6 +19,9 @@ variable "router_name" {
 }
 
 variable "subnets" {
-  description = "A map of subnets with their CIDR ranges"
-  type        = map(string)
+  description = "List of subnet configurations"
+  type = list(object({
+    subnet_name   = string
+    subnet_ip     = string
+  }))
 }
