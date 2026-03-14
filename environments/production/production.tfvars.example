@@ -1,0 +1,40 @@
+aws_region    = "us-west-2"
+app_name      = "prod-app"
+instance_type = "t3.medium"
+azs           = ["us-west-2a", "us-west-2b", "us-west-2c"]
+
+subnets = {
+  public_names   = ["prod-web-1", "prod-web-2", "prod-web-3"]
+  private_names  = ["prod-app-1", "prod-app-2", "prod-app-3"]
+  database_names = ["prod-db-1", "prod-db-2", "prod-db-3"]
+}
+
+tags = {
+  Environment = "Production"
+  ManagedBy   = "Terraform"
+}
+
+# --- Database configurations ---
+db_username   = "admin"
+db_password   = "MUST_USE_STRONG_PASSWORD_FROM_SECRETS_MANAGER"
+
+enable_rds    = true
+enable_aurora = true
+
+# Production configurations with larger instances/multi-instance aurora
+rds_config = {
+  engine            = "postgres"
+  engine_version    = "15.3"
+  instance_class    = "db.m5.large"
+  allocated_storage = 100
+  db_name           = "prod_rds"
+}
+
+aurora_config = {
+  engine         = "aurora-postgresql"
+  engine_version = "15.3"
+  instance_class = "db.r5.large"
+  db_name        = "prod_aurora"
+  instance_count = 3 # Distributed across multiple AZs
+}
+

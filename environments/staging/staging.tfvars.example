@@ -1,0 +1,40 @@
+aws_region    = "us-east-1"
+app_name      = "staging-app"
+instance_type = "t3.micro"
+azs           = ["us-east-1a", "us-east-1b"]
+
+subnets = {
+  public_names   = ["staging-web-1", "staging-web-2"]
+  private_names  = ["staging-app-1", "staging-app-2"]
+  database_names = ["staging-db-1"]
+}
+
+tags = {
+  Environment = "Staging"
+  ManagedBy   = "Terraform"
+}
+
+# --- Database configurations ---
+db_username   = "admin"
+db_password   = "REPLACE_WITH_SECURE_PASSWORD" # Must be at least 8 characters
+
+# To enable both RDS and Aurora simultaneously:
+enable_rds    = true
+enable_aurora = true
+
+rds_config = {
+  engine            = "postgres"
+  engine_version    = "15.3"
+  instance_class    = "db.t3.micro"
+  allocated_storage = 20
+  db_name           = "staging_rds"
+}
+
+aurora_config = {
+  engine         = "aurora-postgresql"
+  engine_version = "15.3"
+  instance_class = "db.t3.medium"
+  db_name        = "staging_aurora"
+  instance_count = 1
+}
+
