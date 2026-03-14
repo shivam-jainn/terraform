@@ -11,6 +11,7 @@ This template implements a standard 3-tier architecture:
 
 ### Features
 - **System CLI Simplicity**: Uses your system-installed Terraform and AWS CLI, no local binary management or downloads required.
+- **Remote State + Locking**: S3 backend for shared state storage with DynamoDB table-based state locking.
 - **Unified Test Suite**: Built-in `terraform test` framework with provider mocking for offline architecture validation across staging and production environments.
 - **Multi-AZ Distribution**: Automatic round-robin distribution of subnets across provided Availability Zones.
 - **Automated Networking**: Dynamic CIDR calculation using `cidrsubnet()` based on an offset strategy (Public: 0, Private: 10, Database: 20).
@@ -22,13 +23,17 @@ This template implements a standard 3-tier architecture:
 ```text
 .
 ├── main.tf                 # Root module orchestration
-├── makefile                # Operational CLI (OS/Arch detection)
+├── makefile                # Operational CLI (plan/apply/init helpers)
 ├── tests/                  # HCL Verification suite
 │   ├── vpc.tftest.hcl      # Network logic testing
 │   └── database.tftest.hcl # Env-specific DB testing
 ├── environments/           # Environment-specific variables
 │   ├── staging/
+│   │   ├── staging.tfvars
+│   │   └── backend.hcl.example
 │   └── production/
+│       ├── production.tfvars
+│       └── backend.hcl.example
 └── modules/                # Reusable Logic
     ├── vpc/                # Networking, IGW, NATG, Subnets
     ├── security/           # Tiered Security Groups
@@ -41,14 +46,29 @@ This template implements a standard 3-tier architecture:
 ### Prerequisites
 - **AWS CLI** installed and configured with valid credentials.
 - **Terraform** installed (v1.5+ recommended; matches your system version).
+- **Pre-created S3 bucket and DynamoDB table** for Terraform backend.
 
 ### Quick Start
 
-1. **Run Architecture Tests:**
+0. **Configure Remote Backend (one-time per environment):**
+  ```bash
+  cp environments/staging/backend.hcl.example environments/staging/backend.hcl
+  cp environments/production/backend.hcl.example environments/production/backend.hcl
+  ```
+  Update `bucket`, `dynamodb_table`, and `region` values in each `backend.hcl`.
+
+1. **Initialize Backend:**
+  ```bash
+  make init-staging
+  # OR
+  make init-production
+  ```
+
+2. **Run Architecture Tests:**
   ```bash
   make test
   ```
-2. **Plan Environment:**
+3. **Plan Environment:**
   ```bash
   make plan-staging
   # OR
@@ -56,7 +76,7 @@ This template implements a standard 3-tier architecture:
   ```
   This will save a plan file (e.g., `plans/staging-plan`).
 
-3. **Deploy:**
+4. **Deploy:**
   ```bash
   make apply-staging APPLY_PLAN=plans/staging-plan
   ```
@@ -64,6 +84,22 @@ This template implements a standard 3-tier architecture:
   ```bash
   make apply-staging
   ```
+
+You can also pass an explicit backend config path:
+```bash
+make init BACKEND_CONFIG=environments/staging/backend.hcl
+```
+
+## 🗃 Remote State
+
+Terraform backend is configured as partial `s3` backend in [providers.tf](providers.tf). Values are supplied at init time via `-backend-config` files.
+
+Required backend settings:
+- `bucket`: S3 bucket name for state storage
+- `key`: State object path per environment (for example `staging/terraform.tfstate`)
+- `region`: AWS region for the backend
+- `dynamodb_table`: DynamoDB table name for state locking
+- `encrypt = true`: S3 server-side encryption for state
 ## 🛑 Validation
 
 - The system enforces that `db_username` cannot be `admin` (reserved by AWS RDS/Aurora for PostgreSQL). If you use this value, Terraform will fail at plan time with a clear error.

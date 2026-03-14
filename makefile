@@ -1,4 +1,4 @@
-.PHONY: setup fmt init validate plan-staging plan-production apply-staging apply-production clean test auth pull-env
+.PHONY: setup fmt init init-staging init-production validate plan-staging plan-production apply-staging apply-production clean test auth pull-env
 
 # Path Variables
 STAGING_VARS = environments/staging/staging.tfvars
@@ -7,9 +7,13 @@ TF_CMD ?= terraform
 AWS_CMD ?= aws
 PLAN_OUT ?=
 APPLY_PLAN ?=
+BACKEND_CONFIG ?=
+STAGING_BACKEND = environments/staging/backend.hcl
+PROD_BACKEND    = environments/production/backend.hcl
 
 PLAN_OUT_FLAG = $(if $(PLAN_OUT),-out=$(PLAN_OUT),)
 APPLY_PLAN_ARG = $(if $(APPLY_PLAN),$(APPLY_PLAN),)
+BACKEND_CONFIG_FLAG = $(if $(BACKEND_CONFIG),-backend-config=$(BACKEND_CONFIG),)
 
 # --- CORE SETUP COMMAND ---
 # Pulls .env and initializes/validates Terraform
@@ -43,7 +47,23 @@ fmt:
 
 init:
 	@echo "🚀 Initializing Terraform..."
-	@$(TF_CMD) init
+	@$(TF_CMD) init $(BACKEND_CONFIG_FLAG)
+
+init-staging:
+	@echo "🚀 Initializing Terraform with Staging backend config..."
+	@if [ ! -f "$(STAGING_BACKEND)" ]; then \
+		echo "❌ Missing $(STAGING_BACKEND). Copy environments/staging/backend.hcl.example to $(STAGING_BACKEND) and update values."; \
+		exit 1; \
+	fi
+	@$(TF_CMD) init -backend-config=$(STAGING_BACKEND)
+
+init-production:
+	@echo "🚀 Initializing Terraform with Production backend config..."
+	@if [ ! -f "$(PROD_BACKEND)" ]; then \
+		echo "❌ Missing $(PROD_BACKEND). Copy environments/production/backend.hcl.example to $(PROD_BACKEND) and update values."; \
+		exit 1; \
+	fi
+	@$(TF_CMD) init -backend-config=$(PROD_BACKEND)
 
 validate: fmt
 	@echo "🔍 Validating configuration..."
